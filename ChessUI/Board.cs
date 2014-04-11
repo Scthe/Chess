@@ -33,7 +33,7 @@ namespace ChessUI.model {
 			// white
 			//for (int i = 0; i < 8; i++)
 				//_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 1, i));
-			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.ROOK, 0, 0));
+			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.ROOK, 3, 0));
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.ROOK, 0, 7));
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.KNIGHT, 0, 1));
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.KNIGHT, 0, 6));
@@ -70,9 +70,6 @@ namespace ChessUI.model {
 			var toFs = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
 			var a = Chess.Fs.unfoldMoves_indirect( toFs, pawn);
 			return new List<Chess.Fs.Position>(a);
-
-			//var a = Chess.Fs.getAvailableMoves(toFs, pawn);
-			//return new List<Chess.Fs.Position>();
 		}
 
 		public Chess.Fs.Pawn atPosition(Chess.Fs.Position p) {

@@ -4,6 +4,8 @@
         Title="MainWindow"
         Width="650"
         Height="500"
+        Left="0"
+        Top="0"
         ResizeMode="NoResize">
     <!--FF1F1F1F-->
 

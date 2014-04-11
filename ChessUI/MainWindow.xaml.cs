@@ -81,13 +81,9 @@ namespace ChessUI {
 			var p = pawn.p;
 			int i = positionToCell(pawn.p);
 			Panel cell = VisualTreeHelper.GetChild(ChessBoard, i) as Panel;
-			//cell.Background = redSelectBrush;
-			//Console.WriteLine(pawn.data.type_.IsPAWN);
 
 			Image image = new Image();
-			//image.BeginInit();
 			image.Source = getPawnImage(pawn.data);
-			//image.EndInit();
 			image.IsEnabled = false;
 
 			cell.Children.Add(image);
@@ -102,6 +98,7 @@ namespace ChessUI {
 		private int positionToCell(Chess.Fs.Position p) {
 			return (7 - p.row) * 8 + p.col;
 		}
+
 		private Chess.Fs.Position CellToPosition(int i) {
 			int r = 7 - (i / 8), c = i % 8;
 			return new Chess.Fs.Position(r, c);
