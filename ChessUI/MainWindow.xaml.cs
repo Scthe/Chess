@@ -25,16 +25,16 @@ namespace ChessUI {
 		private static SolidColorBrush selectBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#caca93"));
 		private static SolidColorBrush alternateSelectBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#948c3e"));
 		private static SolidColorBrush redSelectBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ff8c3e"));
-		private static BitmapImage[] _imageCache = new BitmapImage[12];
 		private static int INVALID_CELL = -1;
 
 		private int SelectedCell = INVALID_CELL;
 		private Board _board = new Board();
+		private ImageCache _imgCache = new ImageCache();
 
 
 		public MainWindow() {
 			InitializeComponent();
-			initBitmapCache();
+			_imgCache.init();
 
 			for (int i = 0; i < 64; i++) {
 				Panel cell = new WrapPanel();
@@ -64,9 +64,8 @@ namespace ChessUI {
 			SelectedCell = i;
 
 			// get selected pawn
-			var position =  CellToPosition(i);
+			var position = CellToPosition(i);
 			var pawn = _board.atPosition(position);
-			//Console.WriteLine( (pawn==null?"~":pawn.data.player.IsWHITE.ToString()));
 
 			// mark possible moves
 			if (pawn != null) {
@@ -88,7 +87,7 @@ namespace ChessUI {
 			Panel cell = VisualTreeHelper.GetChild(ChessBoard, i) as Panel;
 
 			Image image = new Image();
-			image.Source = getPawnImage(pawn.data);
+			image.Source = _imgCache[pawn.data];
 			image.IsEnabled = false;
 
 			cell.Children.Add(image);
@@ -100,6 +99,7 @@ namespace ChessUI {
 			cell.Background = redSelectBrush;
 		}
 
+		// utils
 		private int positionToCell(Chess.Fs.Position p) {
 			return (7 - p.row) * 8 + p.col;
 		}
@@ -109,7 +109,6 @@ namespace ChessUI {
 			return new Chess.Fs.Position(r, c);
 		}
 
-		// utils
 		private Chess.Fs.Color getColor_(int i) {
 			return ((i + i / 8) & 0x1) == 0 ? Chess.Fs.Color.WHITE : Chess.Fs.Color.BLACK;
 		}
@@ -126,38 +125,46 @@ namespace ChessUI {
 				cell.Background = getColor(i, false);
 			}
 		}
+	}
 
-		private static void initBitmapCache() {
-			string[] path = { 
-							"/Resources/pawn.png",
-							"/Resources/rook.png",
-							"/Resources/knight.png",
-							"/Resources/bishop.png",
-							"/Resources/queen.png",
-							"/Resources/king.png"
-							};
+
+	public sealed class ImageCache {
+
+		private static readonly string[] path = { 
+			"/Resources/pawn.png",
+			"/Resources/rook.png",
+			"/Resources/knight.png",
+			"/Resources/bishop.png",
+			"/Resources/queen.png",
+			"/Resources/king.png",
+			"/Resources/pawn_b.png",
+			"/Resources/rook_b.png",
+			"/Resources/knight_b.png",
+			"/Resources/bishop_b.png",
+			"/Resources/queen_b.png",
+			"/Resources/king_b.png" };
+
+		private BitmapImage[] _imageCache = new BitmapImage[12];
+
+		public void init() {
 			for (int i = 0; i < path.Length; i++) {
 				_imageCache[i] = new BitmapImage(new Uri(path[i], UriKind.Relative));
 			}
-			// fill black
-			for (int i = 0; i < path.Length; i++) {
-				int ii = path.Length + i;
-				_imageCache[ii] = _imageCache[i]; // TODO invert images
+		}
+
+		public BitmapImage this[Chess.Fs.Piece p] {
+			get {
+				int i = -1;
+				if (p.type_ == Chess.Fs.PawnType.PAWN) i = 0;
+				else if (p.type_ == Chess.Fs.PawnType.ROOK) i = 1;
+				else if (p.type_ == Chess.Fs.PawnType.KNIGHT) i = 2;
+				else if (p.type_ == Chess.Fs.PawnType.BISHOP) i = 3;
+				else if (p.type_ == Chess.Fs.PawnType.QUEEN) i = 4;
+				else if (p.type_ == Chess.Fs.PawnType.KING) i = 5;
+				if (p.player == Chess.Fs.Color.BLACK)
+					i += 6;
+				return _imageCache[i];
 			}
 		}
-
-		private static BitmapImage getPawnImage(Chess.Fs.Piece p) {
-			int i = -1;
-			if (p.type_ == Chess.Fs.PawnType.PAWN) i = 0;
-			else if (p.type_ == Chess.Fs.PawnType.ROOK) i = 1;
-			else if (p.type_ == Chess.Fs.PawnType.KNIGHT) i = 2;
-			else if (p.type_ == Chess.Fs.PawnType.BISHOP) i = 3;
-			else if (p.type_ == Chess.Fs.PawnType.QUEEN) i = 4;
-			else if (p.type_ == Chess.Fs.PawnType.KING) i = 5;
-			if (p.player == Chess.Fs.Color.BLACK)
-				i += 6;
-			return _imageCache[i];
-		}
-
 	}
 }

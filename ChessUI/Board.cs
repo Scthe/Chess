@@ -36,8 +36,8 @@ namespace ChessUI.model {
 			_pieces = new List<Chess.Fs.Pawn>();
 
 			// white
-			//for (int i = 0; i < 8; i++)
-				//_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 1, i));
+			for (int i = 0; i < 8; i++)
+				_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 1, i));
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.ROOK, 3, 0));
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.ROOK, 0, 7));
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.KNIGHT, 0, 1));

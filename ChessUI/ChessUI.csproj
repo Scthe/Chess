@@ -141,6 +141,14 @@
       <Name>Chess</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\bishop_b.png" />
+    <Resource Include="Resources\king_b.png" />
+    <Resource Include="Resources\knight_b.png" />
+    <Resource Include="Resources\pawn_b.png" />
+    <Resource Include="Resources\queen_b.png" />
+    <Resource Include="Resources\rook_b.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
