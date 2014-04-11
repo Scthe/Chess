@@ -1,20 +1,9 @@
 ﻿using ChessUI.model;
-using Microsoft.FSharp.Collections;
-using Microsoft.FSharp.Core;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ChessUI {
 
@@ -30,7 +19,7 @@ namespace ChessUI {
 		private int SelectedCell = INVALID_CELL;
 		private Board _board = new Board();
 		private ImageCache _imgCache = new ImageCache();
-
+		private int clickStart = INVALID_CELL;
 
 		public MainWindow() {
 			InitializeComponent();
@@ -41,6 +30,8 @@ namespace ChessUI {
 				cell.Background = getColor(i, false);
 				cell.Tag = i;
 				cell.IsMouseDirectlyOverChanged += onCellHover;
+				cell.MouseLeftButtonDown += onCellDown;
+				cell.MouseLeftButtonUp += onCellUp;
 				ChessBoard.Children.Add(cell);
 			}
 
@@ -76,11 +67,39 @@ namespace ChessUI {
 			}
 		}
 
+		private void onCellDown(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+			Panel cell = sender as Panel;
+			clickStart = (int)cell.Tag;
+		}
+
+		private void onCellUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+			Panel cell = sender as Panel;
+			int i = (int)cell.Tag;
+			var pos = CellToPosition(i);
+			if (i == clickStart) {
+				Console.WriteLine("click !");
+				_board.move(null, pos);
+				
+				forceRedraw();
+			} 
+			clickStart = INVALID_CELL;
+		}
+
 		private void Debug_Toogle(object sender, RoutedEventArgs e) {
 			Console.WriteLine("debug: ");
 		}
 
 		// drawing
+		private void forceRedraw() {
+			for (int ii = 0; ii < 64; ii++) {
+				Panel c = VisualTreeHelper.GetChild(ChessBoard, ii) as Panel;
+				c.Children.Clear();
+			}
+			foreach (Chess.Fs.Pawn pawn in _board.Pieces) {
+				drawPawn(pawn);
+			}
+		}
+
 		private void drawPawn(Chess.Fs.Pawn pawn) {
 			var p = pawn.p;
 			int i = positionToCell(pawn.p);

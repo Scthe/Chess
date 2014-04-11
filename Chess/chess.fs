@@ -92,20 +92,36 @@ let unfoldMoves moveList =
 
 let unfoldMoves_indirect board (pawn:Pawn) = unfoldMoves ( getAvailableMoves board pawn) // yeah, just a shortcut..
 
+/// <summary> apply move and return new board representing post-move state </summary>
+let applyMove board (pawn:Pawn) (move:Move)=
+    match move with
+        Move( p, _) when not (canMoveTo board pawn.data p) -> board // TODO what now ? return bool 'if move executed correctly ?'
+        |Move( p, _) when isEnemyAt board pawn.data p ->
+            //Console.WriteLine( "::> KILL" )
+            let enemy = getPawnOnBoard board p
+            board
+                |> List.filter ( fun e-> e <> enemy.Value)
+                |> List.map ( fun e -> if e=pawn then (pawn.data@p) else e)
+        | Move( p, _) ->
+            //Console.WriteLine( "::> MOVE" )
+            board |> List.map ( fun e -> if e=pawn then (pawn.data@p) else e)
+        | End -> board  // TODO what now ? return bool 'if move executed correctly ?'
+
+(* applyMove ad hoc testing
+let p1 = ({player=WHITE; type_=PAWN}@{row=0;col=0})
+let p2 = ({player=BLACK; type_=PAWN}@{row=1;col=0})
+let p3 = ({player=BLACK; type_=PAWN}@{row=4;col=0})
+let r1 = applyMove [p1;p2] p1 ( Move( {row=1;col=0},fun ()->End))
+let r2 = applyMove [p1;p3] p1 ( Move( {row=1;col=0},fun ()->End))
+*)
+
+// TODO <post-move check> check win conditions
+// TODO <post-move check> promotions
+// TODO minimax
 
 
 (*
-let isEnemy myColor otherPawn = myColor=otherPawn.data.player
-
 let getOfColor color board = board |> List.filter ( fun e-> not (isEnemy color e))
-
-let applyMove board (pawn:Pawn) (move:Move)=
-    match move with
-    Move( p, _) ->
-        let f e = if e=pawn then (pawn.data@p) else e
-        List.map f board
-    | End -> []
-
 
 let eval best pretend = 5
 

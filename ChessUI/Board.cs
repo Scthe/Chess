@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Microsoft.FSharp.Collections;
+using Microsoft.FSharp.Core;
 
 //////////////////
 // C# to F# links:
 //		http://stackoverflow.com/questions/661095/retrieving-items-from-an-f-list-passed-to-c-sharp
+//		http://stackoverflow.com/questions/1952114/call-a-higher-order-f-function-from-c-sharp
 //		http://www.voyce.com/index.php/2011/05/09/mixing-it-up-when-f-meets-c/
 //////////////////
 
@@ -96,6 +94,20 @@ namespace ChessUI.model {
 				if (pn.p.col == p.col && pn.p.row == p.row) pw = pn;
 			}
 			return pw;
+		}
+
+		public void move(Chess.Fs.Pawn pawn, Chess.Fs.Position p){
+			pawn = _pieces[0]; // TODO ad hoc testing !
+			var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
+			//var end = Chess.Fs.Move.End;
+			System.Func<Unit,Chess.Fs.Move> f= Unit => Chess.Fs.Move.End;
+
+			var ff = FSharpFunc<Unit, Chess.Fs.Move>.FromConverter(
+				new System.Converter<Unit, Chess.Fs.Move>( f ) );
+			var m = Chess.Fs.Move.Move.NewMove(p, ff);
+			var newBoard = Chess.Fs.applyMove(board, pawn, m);
+			_pieces.Clear();
+			_pieces.AddRange(newBoard);
 		}
 
 		private List<Chess.Fs.Position> __debugTestMovesOfBlackPawns() {
