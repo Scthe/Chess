@@ -5,6 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.FSharp.Collections;
 
+//////////////////
+// C# to F# links:
+//		http://stackoverflow.com/questions/661095/retrieving-items-from-an-f-list-passed-to-c-sharp
+//		http://www.voyce.com/index.php/2011/05/09/mixing-it-up-when-f-meets-c/
+//////////////////
+
 namespace ChessUI.model {
 
 	public static class FSharpInteropExtensions {
@@ -20,7 +26,6 @@ namespace ChessUI.model {
 
 	class Board {
 
-		//private readonly List<Pawn> _pieces;
 		private readonly List<Chess.Fs.Pawn> _pieces;
 
 		public IReadOnlyCollection<Chess.Fs.Pawn> Pieces {
@@ -56,6 +61,18 @@ namespace ChessUI.model {
 
 			//_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 1, 4));
 			//_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.KING, 0, 4));
+
+			/*
+			// pawn tests
+			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.PAWN, 6, 1));
+			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.PAWN, 6, 4));
+			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.PAWN, 5, 4));
+			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.PAWN, 4, 1));
+			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 3, 0));
+			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 3, 2));
+			
+			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.ROOK, 1, 6));
+			 */
 		}
 
 
@@ -67,9 +84,10 @@ namespace ChessUI.model {
 		}
 
 		public List<Chess.Fs.Position> getMoves(Chess.Fs.Pawn pawn) {
-			var toFs = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
-			var a = Chess.Fs.unfoldMoves_indirect( toFs, pawn);
+			var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
+			var a = Chess.Fs.unfoldMoves_indirect(board, pawn);
 			return new List<Chess.Fs.Position>(a);
+			//return __debugTestMovesOfBlackPawns();
 		}
 
 		public Chess.Fs.Pawn atPosition(Chess.Fs.Position p) {
@@ -78,6 +96,17 @@ namespace ChessUI.model {
 				if (pn.p.col == p.col && pn.p.row == p.row) pw = pn;
 			}
 			return pw;
+		}
+
+		private List<Chess.Fs.Position> __debugTestMovesOfBlackPawns() {
+			var r = new List<Chess.Fs.Position>();
+			foreach (Chess.Fs.Pawn p in _pieces) {
+				var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
+				var a = Chess.Fs.unfoldMoves_indirect(board, p);
+				if(p.data.player==Chess.Fs.Color.BLACK)
+					r.AddRange(a);
+			}
+			return r;
 		}
 	}
 }

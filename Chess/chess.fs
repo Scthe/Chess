@@ -54,6 +54,7 @@ let rec trace board pawn dir =
     f 1
 
 
+/// <summary> return list of lazy lists ( list of Moves) representing all possible future positions </summary>
 let getAvailableMoves board (pawn:Pawn)=
     let rook_dirs = [(1,0);(0,1);(-1,0);(0,-1)]
     let knight_dirs = [(1,2);(2,1);(-1,2);(-2,1);(1,-2);(2,-1);(-1,-2);(-2,-1)]
@@ -61,7 +62,13 @@ let getAvailableMoves board (pawn:Pawn)=
     let queen_dirs = List.concat [rook_dirs; bishop_dirs]
     let king_dirs = queen_dirs
     let f = function
-        PAWN -> [ Move( {col=0;row=0}, function ()->End)] // TODO fill, especialy when when attacking can move on diagonal; watch for inverted dirs for BLACK
+        PAWN -> 
+            let dir = if pawn.data.player=BLACK then -1 else 1
+            let inFront = {row=pawn.p.row+dir; col=pawn.p.col}
+            let a1 = { inFront with col=inFront.col-1}
+            let a2 = { inFront with col=inFront.col+1}
+            let f a = if isEnemyAt board pawn.data a then Move(a, fun ()-> End) else End
+            (if canMoveTo board pawn.data inFront then Move(inFront, fun ()-> End) else End) :: ( f a1) :: ( f a2) :: []
         | ROOK   -> List.map (trace board pawn) rook_dirs
         | KNIGHT -> List.map (jump board pawn) knight_dirs
         | BISHOP -> List.map (trace board pawn) bishop_dirs
@@ -69,6 +76,7 @@ let getAvailableMoves board (pawn:Pawn)=
         | KING   -> List.map (jump board pawn) king_dirs
     f pawn.data.type_
 
+/// <summary> return list of all future positions </summary>
 let unfoldMoves moveList = 
     let rec unfoldMove acc move=
         //Console.WriteLine( "::> unfolding ! {0}",(match move with End ->"END" | _->"Go on !") )

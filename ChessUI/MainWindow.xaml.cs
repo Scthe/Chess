@@ -47,6 +47,11 @@ namespace ChessUI {
 			foreach (Chess.Fs.Pawn pawn in _board.Pieces) {
 				drawPawn(pawn);
 			}
+			/*
+			var a =_board.getMoves(null);
+			foreach (Chess.Fs.Position p in a) {
+				markPosition(p);
+			}*/
 		}
 
 		// listeners
