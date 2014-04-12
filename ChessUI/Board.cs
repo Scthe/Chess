@@ -54,8 +54,8 @@ namespace ChessUI.model {
 			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.KNIGHT, 7, 6));
 			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.BISHOP, 7, 2));
 			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.BISHOP, 7, 5));
-			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.QUEEN, 7, 4));
-			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.KING, 7, 3));
+			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.KING, 7, 4));
+			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.QUEEN, 7, 3));
 
 			//_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 1, 4));
 			//_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.KING, 0, 4));
@@ -97,15 +97,16 @@ namespace ChessUI.model {
 		}
 
 		public void move(Chess.Fs.Pawn pawn, Chess.Fs.Position p){
-			pawn = _pieces[0]; // TODO ad hoc testing !
 			var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
-			//var end = Chess.Fs.Move.End;
 			System.Func<Unit,Chess.Fs.Move> f= Unit => Chess.Fs.Move.End;
 
 			var ff = FSharpFunc<Unit, Chess.Fs.Move>.FromConverter(
 				new System.Converter<Unit, Chess.Fs.Move>( f ) );
 			var m = Chess.Fs.Move.Move.NewMove(p, ff);
-			var newBoard = Chess.Fs.applyMove(board, pawn, m);
+			var res = Chess.Fs.applyMove(board, pawn, m);
+			var newBoard = res.Item1;
+			Chess.Fs.MoveResultType moveType = res.Item2;
+			System.Console.WriteLine(Chess.Fs.moveNotation(moveType));
 			_pieces.Clear();
 			_pieces.AddRange(newBoard);
 		}

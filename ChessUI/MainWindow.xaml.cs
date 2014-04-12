@@ -11,15 +11,17 @@ namespace ChessUI {
 
 		private static SolidColorBrush defaultBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#dcc4a3"));
 		private static SolidColorBrush alternateBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9d7c3f"));
-		private static SolidColorBrush selectBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#caca93"));
-		private static SolidColorBrush alternateSelectBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#948c3e"));
-		private static SolidColorBrush redSelectBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ff8c3e"));
+		private static SolidColorBrush hoverBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#caca93"));
+		private static SolidColorBrush alternateHoverBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#948c3e"));
+		private static SolidColorBrush orangeBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ff8c3e"));
+		private static SolidColorBrush redBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ff4c00"));
 		private static int INVALID_CELL = -1;
 
-		private int SelectedCell = INVALID_CELL;
-		private Board _board = new Board();
 		private ImageCache _imgCache = new ImageCache();
+		private int HoveredCell = INVALID_CELL;
 		private int clickStart = INVALID_CELL;
+		private Board _board = new Board();
+		private int _selectedCell = INVALID_CELL;
 
 		public MainWindow() {
 			InitializeComponent();
@@ -52,11 +54,16 @@ namespace ChessUI {
 			Panel cell = sender as Panel;
 			int i = (int)cell.Tag;
 			cell.Background = getColor(i, true);
-			SelectedCell = i;
+			HoveredCell = i;
 
-			// get selected pawn
+			// get hovered pawn
 			var position = CellToPosition(i);
 			var pawn = _board.atPosition(position);
+
+			if (_selectedCell != INVALID_CELL) {
+				var actCell = VisualTreeHelper.GetChild(ChessBoard, _selectedCell) as Panel;
+				actCell.Background = redBrush;
+			}
 
 			// mark possible moves
 			if (pawn != null) {
@@ -77,11 +84,19 @@ namespace ChessUI {
 			int i = (int)cell.Tag;
 			var pos = CellToPosition(i);
 			if (i == clickStart) {
-				Console.WriteLine("click !");
-				_board.move(null, pos);
-				
-				forceRedraw();
-			} 
+				Console.WriteLine("click ! " + _selectedCell);
+				if (_selectedCell != INVALID_CELL) {
+					Chess.Fs.Pawn pawn = _board.atPosition(CellToPosition(_selectedCell));
+					if (pawn != null) {
+						_board.move(pawn, pos);
+						forceRedraw();
+					}
+					_selectedCell = INVALID_CELL;
+				} else {
+					cell.Background = redBrush;
+					_selectedCell = i;
+				}
+			}
 			clickStart = INVALID_CELL;
 		}
 
@@ -115,7 +130,7 @@ namespace ChessUI {
 		private void markPosition(Chess.Fs.Position pos) {
 			int i = positionToCell(pos);
 			Panel cell = VisualTreeHelper.GetChild(ChessBoard, i) as Panel;
-			cell.Background = redSelectBrush;
+			cell.Background = orangeBrush;
 		}
 
 		// utils
@@ -134,8 +149,8 @@ namespace ChessUI {
 
 		private SolidColorBrush getColor(int i, bool select) {
 			return getColor_(i) == Chess.Fs.Color.WHITE ?
-				(select ? selectBrush : defaultBrush) :
-				(select ? alternateSelectBrush : alternateBrush);
+				(select ? hoverBrush : defaultBrush) :
+				(select ? alternateHoverBrush : alternateBrush);
 		}
 
 		private void redrawBoardBackground() {

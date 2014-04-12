@@ -9,9 +9,29 @@ type Piece = { type_:PawnType; player:Color}
 type Pawn = { p:Position; data:Piece}
 type Move = End | Move of Position * ( unit->Move)
 //type Board = List of Pawn
+type MoveResultType =               // should be enough to construct move notation description
+    SimpleMove of Pawn * Move       // who, where
+    | Capture of Pawn * Move * Pawn // who, where, whom
+    | Impossible                    // used to denote error move evaluation. Should not be used..
+    // TODO | Promotion of Pawn * Move * PawnType  // who, where, to what < implement as post-move check ?>
+    // TODO | PromotionCapture of Pawn * Move * Pawn * PawnType  // who, where, whom, to what
+    // TODO | Castle of ?
+    // TODO | EnPassant of Pawn * Move * Pawn // who, where, whom
+exception IllegalMove of string
 
-let opposite = function WHITE->BLACK | _ -> WHITE
+let opposite = function WHITE -> BLACK | _ -> WHITE
 
+let pieceTypeNotation = function PAWN-> "" | ROOK -> "R" | KNIGHT -> "N" | BISHOP -> "B" | QUEEN -> "Q" | KING -> "K"
+
+let positionNotation p = string ( char (int 'a' + p.col)) + string (p.row+1)
+
+/// <summary> get the Algebraic notation of the move </summary>
+let moveNotation = function // TODO add '+' to denote check, '#' for checkmate
+    SimpleMove(p, Move(pos,_)) -> (pieceTypeNotation p.data.type_) + (positionNotation pos)
+    | Capture( p, Move(pos,_), vic) ->(pieceTypeNotation p.data.type_) + "x" + (positionNotation pos)
+    | _ -> raise (IllegalMove("asked to denote an illegal move"))
+    // TODO denote other types of moves
+    
 /// <summary> allow for much nicer syntax -> Pawn := PawnData 'at' position </summary>
 let (@) (a:Piece) (b:Position) :Pawn = {p=b; data=a}
 
@@ -95,17 +115,15 @@ let unfoldMoves_indirect board (pawn:Pawn) = unfoldMoves ( getAvailableMoves boa
 /// <summary> apply move and return new board representing post-move state </summary>
 let applyMove board (pawn:Pawn) (move:Move)=
     match move with
-        Move( p, _) when not (canMoveTo board pawn.data p) -> board // TODO what now ? return bool 'if move executed correctly ?'
+        Move( p, _) when not (canMoveTo board pawn.data p) -> board, Impossible
         |Move( p, _) when isEnemyAt board pawn.data p ->
-            //Console.WriteLine( "::> KILL" )
             let enemy = getPawnOnBoard board p
             board
                 |> List.filter ( fun e-> e <> enemy.Value)
-                |> List.map ( fun e -> if e=pawn then (pawn.data@p) else e)
+                |> List.map ( fun e -> if e=pawn then (pawn.data@p) else e), Capture( pawn, move, enemy.Value)
         | Move( p, _) ->
-            //Console.WriteLine( "::> MOVE" )
-            board |> List.map ( fun e -> if e=pawn then (pawn.data@p) else e)
-        | End -> board  // TODO what now ? return bool 'if move executed correctly ?'
+            board |> List.map ( fun e -> if e=pawn then (pawn.data@p) else e), SimpleMove(pawn, move)
+        | End -> board, Impossible
 
 (* applyMove ad hoc testing
 let p1 = ({player=WHITE; type_=PAWN}@{row=0;col=0})
@@ -116,7 +134,6 @@ let r2 = applyMove [p1;p3] p1 ( Move( {row=1;col=0},fun ()->End))
 *)
 
 // TODO <post-move check> check win conditions
-// TODO <post-move check> promotions
 // TODO minimax
 
 
