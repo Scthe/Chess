@@ -84,7 +84,7 @@ namespace ChessUI {
 			int i = (int)cell.Tag;
 			var pos = CellToPosition(i);
 			if (i == clickStart) {
-				Console.WriteLine("click ! " + _selectedCell);
+				//Console.WriteLine("click ! " + _selectedCell);
 				if (_selectedCell != INVALID_CELL) {
 					Chess.Fs.Pawn pawn = _board.atPosition(CellToPosition(_selectedCell));
 					if (pawn != null) {

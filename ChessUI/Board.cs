@@ -35,7 +35,7 @@ namespace ChessUI.model {
 
 			// white
 			for (int i = 0; i < 8; i++)
-				_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 1, i));
+			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 1, i));
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.ROOK, 3, 0));
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.ROOK, 0, 7));
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.KNIGHT, 0, 1));
@@ -46,19 +46,20 @@ namespace ChessUI.model {
 			_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.KING, 0, 4));
 
 			// black
-			for (int i = 0; i < 8; i++)
-				_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.PAWN, 6, i));
+			//for (int i = 0; i < 8; i++)
+				//_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.PAWN, 6, i));
 			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.ROOK, 7, 0));
 			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.ROOK, 7, 7));
 			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.KNIGHT, 7, 1));
 			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.KNIGHT, 7, 6));
 			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.BISHOP, 7, 2));
 			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.BISHOP, 7, 5));
-			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.KING, 7, 4));
-			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.QUEEN, 7, 3));
-
+			//_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.KING, 7, 4));
+			//_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.QUEEN, 7, 3));
 			//_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.PAWN, 1, 4));
 			//_pieces.Add(Create(Chess.Fs.Color.WHITE, Chess.Fs.PawnType.KING, 0, 4));
+
+			_pieces.Add(Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.KING, 4, 5));
 
 			/*
 			// pawn tests
@@ -100,15 +101,48 @@ namespace ChessUI.model {
 			var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
 			System.Func<Unit,Chess.Fs.Move> f= Unit => Chess.Fs.Move.End;
 
+			// get move results
 			var ff = FSharpFunc<Unit, Chess.Fs.Move>.FromConverter(
 				new System.Converter<Unit, Chess.Fs.Move>( f ) );
 			var m = Chess.Fs.Move.Move.NewMove(p, ff);
 			var res = Chess.Fs.applyMove(board, pawn, m);
+
+			// update board
 			var newBoard = res.Item1;
-			Chess.Fs.MoveResultType moveType = res.Item2;
-			System.Console.WriteLine(Chess.Fs.moveNotation(moveType));
 			_pieces.Clear();
 			_pieces.AddRange(newBoard);
+
+			// print move notation
+			Chess.Fs.MoveResultType moveType = res.Item2;
+			System.Console.WriteLine(Chess.Fs.moveNotation(moveType));
+		}
+
+		public bool isCheck() {
+			var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
+			var a= Chess.Fs.isCheck(board, Chess.Fs.Color.BLACK);
+			System.Console.WriteLine("\tcheck? - "+a);
+			/*
+			var king = Chess.Fs.getKing( board);
+			//System.Console.WriteLine("\tking? - " + b.p.row+" "+b.p.col);
+			var c = Chess.Fs.buildAllPositionsForColor(board,Chess.Fs.Color.WHITE);
+			foreach (Chess.Fs.Position p in c) {
+				var bbb = p == king.p;
+				if (Chess.Fs.posEqual(king.p,p))
+					System.Console.WriteLine("\thand q!");
+				//System.Console.WriteLine(string.Format( "\t{0} -> eq: {1} ( r: {2} c: {3})", Chess.Fs.positionNotation(p), bbb ,(p.row == b.p.row) , p.col == b.p.col));
+			}
+
+			var d = Chess.Fs.positionExistsInSet(king.p, c);
+			if(d)
+				System.Console.WriteLine("\tauto q!");
+
+			var eee = new List<Chess.Fs.Position>();
+			eee.Add(king.p);
+			var ee = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Position>(eee);
+			var e = Chess.Fs.arePositionsInRangeOfPawnsOfColor(board,Chess.Fs.Color.WHITE,ee);
+			System.Console.WriteLine("\tauto2 qq ->"+e);
+			*/
+			return a;
 		}
 
 		private List<Chess.Fs.Position> __debugTestMovesOfBlackPawns() {

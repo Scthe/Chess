@@ -90,10 +90,10 @@ let getAvailableMoves board (pawn:Pawn)=
             let f a = if isEnemyAt board pawn.data a then Move(a, fun ()-> End) else End
             (if canMoveTo board pawn.data inFront then Move(inFront, fun ()-> End) else End) :: ( f a1) :: ( f a2) :: []
         | ROOK   -> List.map (trace board pawn) rook_dirs
-        | KNIGHT -> List.map (jump board pawn) knight_dirs
+        | KNIGHT -> List.map (jump board pawn)  knight_dirs
         | BISHOP -> List.map (trace board pawn) bishop_dirs
         | QUEEN  -> List.map (trace board pawn) queen_dirs
-        | KING   -> List.map (jump board pawn) king_dirs
+        | KING   -> List.map (jump board pawn)  king_dirs
     f pawn.data.type_
 
 /// <summary> return list of all future positions </summary>
@@ -103,12 +103,7 @@ let unfoldMoves moveList =
         match move with
             Move( p, next) -> unfoldMove (p::acc) (next() )
             | End -> acc
-    let rec f acc l=
-        //Console.WriteLine( "::> --" )
-        match l with
-            h::t -> f (unfoldMove acc h) t
-            | _ -> acc
-    f [] moveList
+    moveList |> List.fold unfoldMove []
 
 let unfoldMoves_indirect board (pawn:Pawn) = unfoldMoves ( getAvailableMoves board pawn) // yeah, just a shortcut..
 
@@ -125,16 +120,52 @@ let applyMove board (pawn:Pawn) (move:Move)=
             board |> List.map ( fun e -> if e=pawn then (pawn.data@p) else e), SimpleMove(pawn, move)
         | End -> board, Impossible
 
-(* applyMove ad hoc testing
-let p1 = ({player=WHITE; type_=PAWN}@{row=0;col=0})
-let p2 = ({player=BLACK; type_=PAWN}@{row=1;col=0})
-let p3 = ({player=BLACK; type_=PAWN}@{row=4;col=0})
-let r1 = applyMove [p1;p2] p1 ( Move( {row=1;col=0},fun ()->End))
-let r2 = applyMove [p1;p3] p1 ( Move( {row=1;col=0},fun ()->End))
-*)
+/// <summary> checks if all positions on the list can be reached by at least one pawn of the specified color </summary>
+let arePositionsInRangeOfPawnsOfColor board color (ps:Position List) =
+    let buildAllPositionsForColor board color= 
+        board
+            |> List.filter ( fun e-> e.data.player = color)
+            |> List.map ( fun p-> unfoldMoves ( getAvailableMoves board p))
+            |> List.concat
+            |> Set.ofList
+    let r = buildAllPositionsForColor board color
+    let posEqual p1 p2 = p1.row = p2.row && p1.col = p2.col
+    let positionExistsInSet e = Set.exists (posEqual e) r
+    ps |> List.fold  ( fun acc e-> acc && (positionExistsInSet e) ) true
+
+/// <summary> if the king of provided color is under direct danger ( if the game state is 'Check') </summary>
+let isCheck board color = 
+    let king = List.head( board |> List.filter ( fun e-> e.data.type_ = KING && e.data.player = color ))
+    [king.p] |> arePositionsInRangeOfPawnsOfColor board (opposite color)
+
+
+// Experimental
+type GameStatus = CONTINUE|DRAW| WIN of Color
+
+// Experimental
+let getGameStatus board =
+    let isCheckmated color board =
+        let king = List.head( board |> List.filter ( fun e-> e.data.type_ = KING && e.data.player = color ))
+        // calculate status of fields around the king
+        // if EACH one is either occupied by friendly or in range of enemy pawn, then checkmate ( literally)
+        let kingDir = [(0,0);(1,0);(0,1);(-1,0);(0,-1);(1,1);(-1,1);(1,-1);(-1,-1)]
+        kingDir
+            |> List.map ( fun e -> { row = king.p.row + fst(e); col = king.p.col + snd(e)})
+            |> List.filter ( fun e -> // get positions on board where there is none or enemy
+                match inBounds e, getPawnOnBoard board e with
+                    false, _ -> false
+                    | _, Some p when p.data.player = color -> false // cannot move where friendly is at
+                    | _ -> true)
+            |> arePositionsInRangeOfPawnsOfColor board (opposite color)
+    if isCheckmated BLACK board || isCheckmated WHITE board then WIN(BLACK) else CONTINUE // TODO this is not OK !
+//    let isDraw = // TODO implement draw situation
+
+
 
 // TODO <post-move check> check win conditions
 // TODO minimax
+// TODO after move should not leave at the state 'check' - wrap applyMove function in: let newBoard=...; if isCheck newBoard color then [] else newBoard
+// TODO if pawn still at starting postion ( check dir!), then check if can go row+2
 
 
 (*
