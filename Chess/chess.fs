@@ -3,12 +3,13 @@
 open System
 
 type Color = WHITE|BLACK
+
 type PawnType = PAWN|ROOK|KNIGHT|BISHOP|QUEEN|KING
 type Position = { row:int; col:int}
 type Piece = { type_:PawnType; player:Color}
 type Pawn = { p:Position; data:Piece}
+
 type Move = End | Move of Position * ( unit->Move)
-//type Board = List of Pawn
 type MoveResultType =               // should be enough to construct move notation description
     SimpleMove of Pawn * Move       // who, where
     | Capture of Pawn * Move * Pawn // who, where, whom
@@ -17,52 +18,49 @@ type MoveResultType =               // should be enough to construct move notati
     // TODO | PromotionCapture of Pawn * Move * Pawn * PawnType  // who, where, whom, to what
     // TODO | Castle of ?
     // TODO | EnPassant of Pawn * Move * Pawn // who, where, whom
+
 exception IllegalMove of string
+//type Board = List of Pawn
 
-let opposite = function WHITE -> BLACK | _ -> WHITE
 
-let pieceTypeNotation = function PAWN-> "" | ROOK -> "R" | KNIGHT -> "N" | BISHOP -> "B" | QUEEN -> "Q" | KING -> "K"
+let private opposite = function WHITE -> BLACK | _ -> WHITE
 
-let positionNotation p = string ( char (int 'a' + p.col)) + string (p.row+1)
+let private pieceTypeNotation = function PAWN-> "" | ROOK -> "R" | KNIGHT -> "N" | BISHOP -> "B" | QUEEN -> "Q" | KING -> "K"
 
-/// <summary> get the Algebraic notation of the move </summary>
-let moveNotation = function // TODO add '+' to denote check, '#' for checkmate
-    SimpleMove(p, Move(pos,_)) -> (pieceTypeNotation p.data.type_) + (positionNotation pos)
-    | Capture( p, Move(pos,_), vic) ->(pieceTypeNotation p.data.type_) + "x" + (positionNotation pos)
-    | _ -> raise (IllegalMove("asked to denote an illegal move"))
-    // TODO denote other types of moves
-    
+let private positionNotation p = string ( char (int 'a' + p.col)) + string (p.row+1)
+
 /// <summary> allow for much nicer syntax -> Pawn := PawnData 'at' position </summary>
-let (@) (a:Piece) (b:Position) :Pawn = {p=b; data=a}
+let private (@) (a:Piece) (b:Position) :Pawn = {p=b; data=a}
+
+//#region move
+/// <summary> if the position is still within the bounds of the board </summary>
+let private inBounds position = position.row >= 0 && position.row < 8 && position.col >= 0 && position.col < 8
 
 /// <summary> returns pawn on the postion 'p' [ actual return type is Pawn option] </summary>
-let rec getPawnOnBoard board (p:Position) = 
+let rec private getPawnOnBoard board (p:Position) = 
  match board with
     | h::t -> if p.col=h.p.col && p.row=h.p.row then Some h else getPawnOnBoard t p
     | [] -> None
 
-/// <summary> if the position is still within the bounds of the board </summary>
-let inBounds position = position.row >= 0 && position.row < 8 && position.col >= 0 && position.col < 8
-
-let isEnemyAt board (piece:Piece) (p:Position) =
+let private isEnemyAt board (piece:Piece) (p:Position) =
     let e = getPawnOnBoard board p
     e.IsSome && e.Value.data.player = opposite piece.player
 
 /// <summary> if piece can be put on this very position </summary>
-let canMoveTo board (piece:Piece) (p:Position) =
+let private canMoveTo board (piece:Piece) (p:Position) =
     match (getPawnOnBoard board p), inBounds p with
     _,false -> false
     | a,_ when a.IsSome && a.Value.data.player = piece.player -> false // cannot move to position occupied by friendly piece
     | _ -> true
 
 /// <summary> move type: 'teleport' from one position to another ignoring obstacles </summary>
-let jump board pawn dir =
+let private jump board pawn dir =
     let newPos = { row = fst(dir)+pawn.p.row; col = snd(dir)+pawn.p.col}
     //Console.WriteLine( "\> {0} {1}",fst(dir),snd(dir))
     if (canMoveTo board pawn.data newPos) then Move( newPos, function ()->End) else End
 
 /// <summary> move type: along the line, till board ends </summary>
-let rec trace board pawn dir = 
+let rec private trace board pawn dir = 
     let rec f (n:int) =
         let newPos = { row = fst(dir)*n+pawn.p.row; col = snd(dir)*n+pawn.p.col}
         //Console.WriteLine( "::> depth:{0:D} dir:{1} moveTo: [{2} {3}]", n, fst(dir)*2+snd(dir), newPos.row, newPos.col)
@@ -72,7 +70,14 @@ let rec trace board pawn dir =
             | _, true -> Move( newPos, function ()->End) // obstacle !
             | _-> Move( newPos, function ()->f (n+1)) // move along
     f 1
+//#endregion
 
+/// <summary> get the Algebraic notation of the move </summary>
+let moveNotation = function // TODO add '+' to denote check, '#' for checkmate
+    SimpleMove(p, Move(pos,_)) -> (pieceTypeNotation p.data.type_) + (positionNotation pos)
+    | Capture( p, Move(pos,_), vic) ->(pieceTypeNotation p.data.type_) + "x" + (positionNotation pos)
+    | _ -> raise (IllegalMove("asked to denote an illegal move"))
+    // TODO denote other types of moves
 
 /// <summary> return list of lazy lists ( list of Moves) representing all possible future positions </summary>
 let getAvailableMoves board (pawn:Pawn)=
@@ -105,8 +110,6 @@ let unfoldMoves moveList =
             | End -> acc
     moveList |> List.fold unfoldMove []
 
-let unfoldMoves_indirect board (pawn:Pawn) = unfoldMoves ( getAvailableMoves board pawn) // yeah, just a shortcut..
-
 /// <summary> apply move and return new board representing post-move state </summary>
 let applyMove board (pawn:Pawn) (move:Move)=
     match move with
@@ -120,8 +123,9 @@ let applyMove board (pawn:Pawn) (move:Move)=
             board |> List.map ( fun e -> if e=pawn then (pawn.data@p) else e), SimpleMove(pawn, move)
         | End -> board, Impossible
 
+
 /// <summary> checks if all positions on the list can be reached by at least one pawn of the specified color </summary>
-let arePositionsInRangeOfPawnsOfColor board color (ps:Position List) =
+let private arePositionsInRangeOfPawnsOfColor board color (ps:Position List) =
     let buildAllPositionsForColor board color= 
         board
             |> List.filter ( fun e-> e.data.player = color)
@@ -137,7 +141,6 @@ let arePositionsInRangeOfPawnsOfColor board color (ps:Position List) =
 let isCheck board color = 
     let king = List.head( board |> List.filter ( fun e-> e.data.type_ = KING && e.data.player = color ))
     [king.p] |> arePositionsInRangeOfPawnsOfColor board (opposite color)
-
 
 // Experimental
 type GameStatus = CONTINUE|DRAW| WIN of Color

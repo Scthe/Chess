@@ -84,7 +84,8 @@ namespace ChessUI.model {
 
 		public List<Chess.Fs.Position> getMoves(Chess.Fs.Pawn pawn) {
 			var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
-			var a = Chess.Fs.unfoldMoves_indirect(board, pawn);
+			var aa = Chess.Fs.getAvailableMoves(board, pawn);
+			var a = Chess.Fs.unfoldMoves(aa);
 			return new List<Chess.Fs.Position>(a);
 			//return __debugTestMovesOfBlackPawns();
 		}
@@ -99,9 +100,10 @@ namespace ChessUI.model {
 
 		public void move(Chess.Fs.Pawn pawn, Chess.Fs.Position p){
 			var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
-			System.Func<Unit,Chess.Fs.Move> f= Unit => Chess.Fs.Move.End;
+			
 
 			// get move results
+			System.Func<Unit, Chess.Fs.Move> f = Unit => Chess.Fs.Move.End; 
 			var ff = FSharpFunc<Unit, Chess.Fs.Move>.FromConverter(
 				new System.Converter<Unit, Chess.Fs.Move>( f ) );
 			var m = Chess.Fs.Move.Move.NewMove(p, ff);
@@ -149,8 +151,9 @@ namespace ChessUI.model {
 			var r = new List<Chess.Fs.Position>();
 			foreach (Chess.Fs.Pawn p in _pieces) {
 				var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
-				var a = Chess.Fs.unfoldMoves_indirect(board, p);
-				if(p.data.player==Chess.Fs.Color.BLACK)
+				var aa = Chess.Fs.getAvailableMoves(board, p);
+				var a = Chess.Fs.unfoldMoves(aa);
+				if (p.data.player == Chess.Fs.Color.BLACK)
 					r.AddRange(a);
 			}
 			return r;
