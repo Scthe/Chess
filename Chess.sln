@@ -5,8 +5,6 @@ VisualStudioVersion = 12.0.30110.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Chess", "Chess\Chess.fsproj", "{18158EF6-72A0-4F41-865B-D8723C3E8048}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ChessUnitTesting", "ChessUnitTesting\ChessUnitTesting.fsproj", "{210BA497-CEFF-4A0E-A63C-A7C9188BE311}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{00AA2CE8-E53C-49BE-878C-77F48380673C}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\packages.config = .nuget\packages.config
@@ -44,21 +42,6 @@ Global
 		{18158EF6-72A0-4F41-865B-D8723C3E8048}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{18158EF6-72A0-4F41-865B-D8723C3E8048}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{18158EF6-72A0-4F41-865B-D8723C3E8048}.Release|Win32.ActiveCfg = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.fs|Any CPU.ActiveCfg = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.fs|Any CPU.Build.0 = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.fs|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.fs|Mixed Platforms.Build.0 = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.fs|Win32.ActiveCfg = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Release|Any CPU.Build.0 = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{210BA497-CEFF-4A0E-A63C-A7C9188BE311}.Release|Win32.ActiveCfg = Release|Any CPU
 		{07994068-EF91-47C1-8573-FAFB7EF6256E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{07994068-EF91-47C1-8573-FAFB7EF6256E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07994068-EF91-47C1-8573-FAFB7EF6256E}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
