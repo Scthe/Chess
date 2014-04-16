@@ -11,8 +11,6 @@ namespace ChessUnitTests {
 	[TestClass]
 	public class ChessFsTest {
 
-		public ChessFsTest() {		}
-
 		[TestMethod]
 		public void TestMoveNotation() {
 			List<Fs.Pawn> _pieces = new List<Fs.Pawn>();
@@ -22,7 +20,7 @@ namespace ChessUnitTests {
 			_pieces.Add(Utils.Create(Fs.Color.BLACK, Fs.PawnType.BISHOP, 0, 4));
 			_pieces.Add(Utils.Create(Fs.Color.WHITE, Fs.PawnType.QUEEN, 0, 5));
 			_pieces.Add(Utils.Create(Fs.Color.WHITE, Fs.PawnType.KING, 0, 6));
-			
+
 			int[,] destinations = { { 4, 5 }, { 6, 1 }, { 0, 0 }, { 7, 7 }, { 5, 5 }, { 6, 6 } };
 			string[] expected = { "f5", "Rb7", "Na1", "Bh8", "Qf6", "Kg7" };
 			for (int i = 0; i < _pieces.Count; i++) {
@@ -152,7 +150,7 @@ namespace ChessUnitTests {
 			ExpectMoves(bb, p0, 8);
 			// corner
 			bb.Clear();
-			var p1 = Utils.Create(Fs.Color.BLACK, Fs.PawnType.KING, 0,0 );
+			var p1 = Utils.Create(Fs.Color.BLACK, Fs.PawnType.KING, 0, 0);
 			bb.Add(p1);
 			ExpectMoves(bb, p1, 3);
 			// corner, block by same color
@@ -160,6 +158,66 @@ namespace ChessUnitTests {
 			bb.Add(Utils.Create(Fs.Color.BLACK, Fs.PawnType.PAWN, 0, 1));
 			bb.Add(Utils.Create(Fs.Color.BLACK, Fs.PawnType.PAWN, 1, 1));
 			ExpectMoves(bb, p1, 0);
+		}
+
+		[TestMethod]
+		public void TestApplyMove() {
+			var cmp = new Utils.PositionComparer();
+			List<Fs.Pawn> bb = new List<Fs.Pawn>();
+
+			// just move
+			var p0 = Utils.Create(Fs.Color.BLACK, Fs.PawnType.PAWN, 4, 4);
+			bb.Add(p0);
+			bb.Add(Utils.Create(Fs.Color.BLACK, Fs.PawnType.PAWN, 0, 0));
+			bb.Add(Utils.Create(Fs.Color.BLACK, Fs.PawnType.PAWN, 2, 0));
+			bb.Add(Utils.Create(Fs.Color.BLACK, Fs.PawnType.PAWN, 4, 0));
+			var target = new Fs.Position(3, 4);
+
+			var res = ExecuteMove(bb, p0, target);
+			var newBoard = new List<Fs.Pawn>(res.Item1);
+			var move = res.Item2;
+			Assert.AreEqual(bb.Count, newBoard.Count);
+			Assert.AreEqual(0, cmp.Compare(newBoard[0].p, target));
+			Assert.IsTrue(res.Item2.IsSimpleMove);
+			Chess.Fs.MoveResultType.SimpleMove sm = res.Item2 as Chess.Fs.MoveResultType.SimpleMove;
+			Assert.AreEqual(sm.Item1, p0);
+
+			// capture
+			var p1 = Utils.Create(Fs.Color.WHITE, Fs.PawnType.PAWN, 3, 4);
+			bb.Add(p1);
+
+			res = ExecuteMove(bb, p0, target);
+			newBoard = new List<Fs.Pawn>(res.Item1);
+			move = res.Item2;
+			Assert.AreEqual(bb.Count - 1, newBoard.Count); // deleted one !
+			Assert.IsTrue(newBoard.Exists((Fs.Pawn p) => { return cmp.Compare(p.p, target) == 0; }));
+			Assert.IsTrue(res.Item2.IsCapture);
+			Chess.Fs.MoveResultType.Capture cap = res.Item2 as Chess.Fs.MoveResultType.Capture;
+			Assert.AreEqual(cap.Item1, p0);
+			Assert.AreEqual(cap.Item3, p1);
+			// impossible move
+			var targetImpossible = new Fs.Position(7, 7);
+			res = ExecuteMove(bb, p0, targetImpossible);
+			Assert.IsTrue(res.Item2.IsImpossible);
+			// TODO promotions etc.
+		}
+
+		[TestMethod]
+		public void TestIsCheck() {
+			List<Fs.Pawn> baseBoard = new List<Fs.Pawn>();
+			baseBoard.Add(Utils.Create(Fs.Color.BLACK, Fs.PawnType.KING, 4, 4));
+			var rook = new Fs.Piece(Fs.PawnType.ROOK, Fs.Color.WHITE);
+			int cnt = 0;
+			for (int i = 0; i < 8; i++) {
+				for (int j = 0; j < 8; j++) {
+					var p = new Fs.Pawn(new Fs.Position(i, j), rook);
+					List<Fs.Pawn> bb = new List<Fs.Pawn>(baseBoard);
+					bb.Add(p);
+					var b = Fs.isCheck(FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(bb), Fs.Color.BLACK);
+					if (b) cnt += 1;
+				}
+			}
+			Assert.AreEqual(14, cnt); // there are total of 14 positions where rook can reach the king
 		}
 
 
@@ -200,7 +258,12 @@ namespace ChessUnitTests {
 			CollectionAssert.AreEquivalent(res, positions);
 		}
 
+		private static Tuple<Microsoft.FSharp.Collections.FSharpList<Fs.Pawn>, Fs.MoveResultType> ExecuteMove(List<Fs.Pawn> board, Fs.Pawn p, Fs.Position target) {
+			var bb = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(board);
+			var move = Utils.CreateMoveTo(target);
+			return Chess.Fs.applyMove(bb, p, move);
+			//return new List<Fs.Pawn>(res.Item1);
+		}
 	}
 
-	
 }

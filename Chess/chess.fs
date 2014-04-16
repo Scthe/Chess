@@ -49,9 +49,8 @@ let private isEnemyAt board (piece:Piece) (p:Position) =
 /// <summary> if piece can be put on this very position </summary>
 let private canMoveTo board (piece:Piece) (p:Position) =
     match (getPawnOnBoard board p), inBounds p with
-    _,false -> false
-    | a,_ when a.IsSome && a.Value.data.player = piece.player -> false // cannot move to position occupied by friendly piece
-    | _ -> true
+        | a,_ when a.IsSome && a.Value.data.player = piece.player -> false // cannot move to position occupied by friendly piece
+        | _ ,t-> t
 
 /// <summary> move type: 'teleport' from one position to another ignoring obstacles </summary>
 let private jump board pawn dir =
@@ -110,10 +109,12 @@ let unfoldMoves moveList =
             | End -> acc
     moveList |> List.fold unfoldMove []
 
-/// <summary> apply move and return new board representing post-move state </summary>
+/// <summary> apply move and return new board representing post-move state.
+/// Rememeber to always check if returned MoveResultType is not Impossible ! </summary>
 let applyMove board (pawn:Pawn) (move:Move)=
+    let possibleMoves = unfoldMoves ( getAvailableMoves board pawn)
     match move with
-        Move( p, _) when not (canMoveTo board pawn.data p) -> board, Impossible
+        Move( p, _) when not ( possibleMoves |> List.exists (fun e -> p.row=e.row && p.col=e.col)) -> board, Impossible
         |Move( p, _) when isEnemyAt board pawn.data p ->
             let enemy = getPawnOnBoard board p
             board
@@ -141,6 +142,9 @@ let private arePositionsInRangeOfPawnsOfColor board color (ps:Position List) =
 let isCheck board color = 
     let king = List.head( board |> List.filter ( fun e-> e.data.type_ = KING && e.data.player = color ))
     [king.p] |> arePositionsInRangeOfPawnsOfColor board (opposite color)
+
+
+
 
 // Experimental
 type GameStatus = CONTINUE|DRAW| WIN of Color
