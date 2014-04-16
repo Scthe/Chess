@@ -58,7 +58,7 @@ namespace ChessUI {
 
 			// get hovered pawn
 			var position = CellToPosition(i);
-			var pawn = _board.atPosition(position);
+			var pawn = _board.AtPosition(position);
 
 			if (_selectedCell != INVALID_CELL) {
 				var actCell = VisualTreeHelper.GetChild(ChessBoard, _selectedCell) as Panel;
@@ -67,7 +67,7 @@ namespace ChessUI {
 
 			// mark possible moves
 			if (pawn != null) {
-				var a = _board.getMoves(pawn);
+				var a = _board.GetMoves(pawn);
 				foreach (Chess.Fs.Position pos in a) {
 					markPosition(pos);
 				}
@@ -86,9 +86,9 @@ namespace ChessUI {
 			if (i == clickStart) {
 				//Console.WriteLine("click ! " + _selectedCell);
 				if (_selectedCell != INVALID_CELL) {
-					Chess.Fs.Pawn pawn = _board.atPosition(CellToPosition(_selectedCell));
+					Chess.Fs.Pawn pawn = _board.AtPosition(CellToPosition(_selectedCell));
 					if (pawn != null) {
-						_board.move(pawn, pos);
+						_board.Move(pawn, pos);
 						forceRedraw();
 					}
 					_selectedCell = INVALID_CELL;

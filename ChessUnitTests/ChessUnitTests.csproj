@@ -55,6 +55,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ChessUI\ChessUI.csproj">
+      <Project>{07994068-ef91-47c1-8573-fafb7ef6256e}</Project>
+      <Name>ChessUI</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Chess\Chess.fsproj">
       <Project>{18158ef6-72a0-4f41-865b-d8723c3e8048}</Project>
       <Name>Chess</Name>
