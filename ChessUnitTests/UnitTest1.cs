@@ -206,18 +206,107 @@ namespace ChessUnitTests {
 		public void TestIsCheck() {
 			List<Fs.Pawn> baseBoard = new List<Fs.Pawn>();
 			baseBoard.Add(Utils.Create(Fs.Color.BLACK, Fs.PawnType.KING, 4, 4));
-			var rook = new Fs.Piece(Fs.PawnType.ROOK, Fs.Color.WHITE);
+
+			List<Fs.PawnType> ll = new List<Fs.PawnType>();
+			ll.Add(Fs.PawnType.ROOK);
+			ll.Add(Fs.PawnType.BISHOP);
+			ll.Add(Fs.PawnType.KNIGHT);
+			ll.Add(Fs.PawnType.QUEEN);
+			Dictionary<Fs.PawnType, int> dict = new Dictionary<Fs.PawnType, int>();
+			foreach (Fs.PawnType pt in ll) dict.Add(pt, 0);
+
+			for (int i = 0; i < 8; i++) {
+				for (int j = 0; j < 8; j++) {
+					foreach (Fs.PawnType pt in ll) {
+						var p = new Fs.Pawn(new Fs.Position(i, j), new Fs.Piece(pt, Fs.Color.WHITE));
+						List<Fs.Pawn> bb = new List<Fs.Pawn>(baseBoard);
+						bb.Add(p);
+						var b = Fs.isCheck(FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(bb), Fs.Color.BLACK);
+						if (b) {
+							dict[pt] = dict[pt] + 1;
+						}
+					}
+				}
+			}
+			Assert.AreEqual(14, dict[Fs.PawnType.ROOK]); // there are total of 14 positions where rook can reach the king
+			Assert.AreEqual(13, dict[Fs.PawnType.BISHOP]);
+			Assert.AreEqual(8, dict[Fs.PawnType.KNIGHT]);
+			Assert.AreEqual(27, dict[Fs.PawnType.QUEEN]);
+			//foreach (KeyValuePair<Fs.PawnType, int> pair in dict) {
+			//Console.WriteLine(pair.Key.ToString() + " -> " + pair.Value);
+			//}
+		}
+
+		[TestMethod]
+		public void TestCheckmateDetection() {
+			// king in the corner, cover position of only solution with the knight, place the queen in that position
+			List<Fs.Pawn> baseBoard = new List<Fs.Pawn>();
+			var king = Utils.Create(Fs.Color.BLACK, Fs.PawnType.KING, 0, 0);
+			var knight = Utils.Create(Fs.Color.WHITE, Fs.PawnType.KNIGHT, 3, 2);
+			var q = new Fs.Piece(Fs.PawnType.QUEEN, Fs.Color.WHITE);
+			baseBoard.Add(king);
+			baseBoard.Add(knight);
+
 			int cnt = 0;
 			for (int i = 0; i < 8; i++) {
 				for (int j = 0; j < 8; j++) {
-					var p = new Fs.Pawn(new Fs.Position(i, j), rook);
+					//if (i == king.p.row && j == king.p.col) continue;
+					var p = new Fs.Pawn(new Fs.Position(i, j), q);
 					List<Fs.Pawn> bb = new List<Fs.Pawn>(baseBoard);
 					bb.Add(p);
-					var b = Fs.isCheck(FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(bb), Fs.Color.BLACK);
-					if (b) cnt += 1;
+					var b = Fs.isCheckmated(FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(bb), Fs.Color.BLACK);
+					if (b) {
+						Assert.IsTrue(Fs.isCheck(FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(bb), Fs.Color.BLACK));
+						Console.WriteLine(i + "x" + j);
+						cnt += 1;
+					}
 				}
 			}
-			Assert.AreEqual(14, cnt); // there are total of 14 positions where rook can reach the king
+			Console.WriteLine("(" + cnt + ")");
+			Assert.AreEqual(1, cnt);
+
+
+
+			// sub test - king moves detection
+			/*
+			var res = Fs.kk(FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(board), Fs.Color.BLACK);
+			Console.WriteLine("("+res.Length+")"); 
+			foreach (Fs.Position p in res) {
+				Console.WriteLine(p.row + " x " + p.col);
+			}*/
+			// straight up solution sub-test
+			/*
+			baseBoard.Add(Utils.Create(Fs.Color.WHITE, Fs.PawnType.QUEEN, 1, 1));
+
+			Console.WriteLine( "knight can move to (1,1): "+Fs.canMoveTo(true,
+				FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(baseBoard),
+				knight.data, new Fs.Position(1,1) ) );
+
+			var lll = Fs.buildAllPositionsForColor(
+				FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(baseBoard), Fs.Color.WHITE );
+			foreach (IEnumerable< Fs.Position> ps in lll) {
+				Console.WriteLine("("+ps.ToFSharplist().Length+"):");
+				foreach (Fs.Position p in ps) {
+					Console.WriteLine("\t"+p.row + " x " + p.col);
+				}
+				//break;
+				Console.WriteLine("--next pawn--");
+			}
+
+			Console.WriteLine("Around king state:");
+
+			var positionsAroundTheKingIncludingPresent = Fs.kk(FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(baseBoard), Fs.Color.BLACK);
+			foreach (Fs.Position p in positionsAroundTheKingIncludingPresent) {
+				var ll = new List<Fs.Position>();
+				ll.Add(p);
+				var r =Fs.arePositionsInRangeOfPawnsOfColor(
+					FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(baseBoard),
+					Fs.Color.WHITE, 
+					FSharpInteropExtensions.ToFSharplist<Fs.Position>(ll)
+					);
+				Console.WriteLine("\t"+p.row + " x " + p.col+" --inrange--> "+r);
+			}
+			*/
 		}
 
 
@@ -235,7 +324,7 @@ namespace ChessUnitTests {
 
 		private static void ExpectMoves(List<Fs.Pawn> board, Fs.Pawn pawn, int cnt) {
 			var b = FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(board);
-			var res1 = Fs.getAvailableMoves(b, pawn);
+			var res1 = Fs.getAvailableMoves(false, b, pawn);
 			var res2 = Fs.unfoldMoves(res1);
 			var res = new List<Fs.Position>(res2);
 			Console.WriteLine(res.Count);
@@ -243,7 +332,7 @@ namespace ChessUnitTests {
 		}
 		private static void ExpectMoves(List<Fs.Pawn> board, Fs.Pawn pawn, List<Fs.Position> positions) {
 			var b = FSharpInteropExtensions.ToFSharplist<Fs.Pawn>(board);
-			var res1 = Fs.getAvailableMoves(b, pawn);
+			var res1 = Fs.getAvailableMoves(false, b, pawn);
 			var res2 = Fs.unfoldMoves(res1);
 			var res = new List<Fs.Position>(res2);
 			/*

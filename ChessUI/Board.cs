@@ -44,12 +44,13 @@ namespace ChessUI.model {
 			_pieces.Add(Utils.Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.BISHOP, 7, 5));
 			_pieces.Add(Utils.Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.KING, 7, 4));
 			_pieces.Add(Utils.Create(Chess.Fs.Color.BLACK, Chess.Fs.PawnType.QUEEN, 7, 3));
+
 		}
 
 		
 		public List<Chess.Fs.Position> GetMoves(Chess.Fs.Pawn pawn) {
 			var board = FSharpInteropExtensions.ToFSharplist<Chess.Fs.Pawn>(_pieces);
-			var aa = Chess.Fs.getAvailableMoves(board, pawn);
+			var aa = Chess.Fs.getAvailableMoves(false, board, pawn);
 			var a = Chess.Fs.unfoldMoves(aa);
 			return new List<Chess.Fs.Position>(a);
 		}

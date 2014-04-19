@@ -47,24 +47,24 @@ let private isEnemyAt board (piece:Piece) (p:Position) =
     e.IsSome && e.Value.data.player = opposite piece.player
 
 /// <summary> if piece can be put on this very position </summary>
-let private canMoveTo board (piece:Piece) (p:Position) =
+let private canMoveTo ignoreFriendlyUnits board (piece:Piece) (p:Position) =
     match (getPawnOnBoard board p), inBounds p with
-        | a,_ when a.IsSome && a.Value.data.player = piece.player -> false // cannot move to position occupied by friendly piece
+        | a,_ when (not ignoreFriendlyUnits) && a.IsSome && (a.Value.data.player = piece.player) -> false // cannot move to position occupied by friendly piece
         | _ ,t-> t
 
 /// <summary> move type: 'teleport' from one position to another ignoring obstacles </summary>
-let private jump board pawn dir =
+let private jump moveValidation board pawn dir =
     let newPos = { row = fst(dir)+pawn.p.row; col = snd(dir)+pawn.p.col}
     //Console.WriteLine( "\> {0} {1}",fst(dir),snd(dir))
-    if (canMoveTo board pawn.data newPos) then Move( newPos, function ()->End) else End
+    if (moveValidation board pawn.data newPos) then Move( newPos, function ()->End) else End
 
-/// <summary> move type: along the line, till board ends </summary>
-let rec private trace board pawn dir = 
+/// <summary> move type: along the line, till board ends or obstacle met </summary>
+let rec private trace moveValidation board pawn dir = 
     let rec f (n:int) =
         let newPos = { row = fst(dir)*n+pawn.p.row; col = snd(dir)*n+pawn.p.col}
         //Console.WriteLine( "::> depth:{0:D} dir:{1} moveTo: [{2} {3}]", n, fst(dir)*2+snd(dir), newPos.row, newPos.col)
         //Console.WriteLine( "::> \tstats canMoveTo: {0} isEnemyAt: {1}", (canMoveTo board pawn.data newPos), (isEnemyAt board pawn.data newPos))
-        match (canMoveTo board pawn.data newPos), (isEnemyAt board pawn.data newPos) with
+        match (moveValidation board pawn.data newPos), (isEnemyAt board pawn.data newPos) with
             false,_-> End
             | _, true -> Move( newPos, function ()->End) // obstacle !
             | _-> Move( newPos, function ()->f (n+1)) // move along
@@ -79,7 +79,8 @@ let moveNotation = function // TODO add '+' to denote check, '#' for checkmate
     // TODO denote other types of moves
 
 /// <summary> return list of lazy lists ( list of Moves) representing all possible future positions </summary>
-let getAvailableMoves board (pawn:Pawn)=
+let getAvailableMoves ignoreFriendlyUnits board (pawn:Pawn)=
+    let canMoveTo_ = ((canMoveTo) ignoreFriendlyUnits)
     let rook_dirs = [(1,0);(0,1);(-1,0);(0,-1)]
     let knight_dirs = [(1,2);(2,1);(-1,2);(-2,1);(1,-2);(2,-1);(-1,-2);(-2,-1)]
     let bishop_dirs = [(1,1);(-1,1);(1,-1);(-1,-1)]
@@ -92,12 +93,12 @@ let getAvailableMoves board (pawn:Pawn)=
             let a1 = { inFront with col=inFront.col-1}
             let a2 = { inFront with col=inFront.col+1}
             let f a = if isEnemyAt board pawn.data a then Move(a, fun ()-> End) else End
-            (if canMoveTo board pawn.data inFront then Move(inFront, fun ()-> End) else End) :: ( f a1) :: ( f a2) :: []
-        | ROOK   -> List.map (trace board pawn) rook_dirs
-        | KNIGHT -> List.map (jump board pawn)  knight_dirs
-        | BISHOP -> List.map (trace board pawn) bishop_dirs
-        | QUEEN  -> List.map (trace board pawn) queen_dirs
-        | KING   -> List.map (jump board pawn)  king_dirs
+            (if canMoveTo_ board pawn.data inFront then Move(inFront, fun ()-> End) else End) :: ( f a1) :: ( f a2) :: []
+        | ROOK   -> List.map (trace canMoveTo_ board pawn) rook_dirs
+        | KNIGHT -> List.map (jump canMoveTo_ board pawn)  knight_dirs
+        | BISHOP -> List.map (trace canMoveTo_ board pawn) bishop_dirs
+        | QUEEN  -> List.map (trace canMoveTo_ board pawn) queen_dirs
+        | KING   -> List.map (jump canMoveTo_ board pawn)  king_dirs
     f pawn.data.type_
 
 /// <summary> return list of all future positions </summary>
@@ -112,7 +113,7 @@ let unfoldMoves moveList =
 /// <summary> apply move and return new board representing post-move state.
 /// Rememeber to always check if returned MoveResultType is not Impossible ! </summary>
 let applyMove board (pawn:Pawn) (move:Move)=
-    let possibleMoves = unfoldMoves ( getAvailableMoves board pawn)
+    let possibleMoves = unfoldMoves ( getAvailableMoves false board pawn)
     match move with
         Move( p, _) when not ( possibleMoves |> List.exists (fun e -> p.row=e.row && p.col=e.col)) -> board, Impossible
         |Move( p, _) when isEnemyAt board pawn.data p ->
@@ -130,7 +131,7 @@ let private arePositionsInRangeOfPawnsOfColor board color (ps:Position List) =
     let buildAllPositionsForColor board color= 
         board
             |> List.filter ( fun e-> e.data.player = color)
-            |> List.map ( fun p-> unfoldMoves ( getAvailableMoves board p))
+            |> List.map ( fun p-> unfoldMoves ( getAvailableMoves true board p))
             |> List.concat
             |> Set.ofList
     let r = buildAllPositionsForColor board color
@@ -143,6 +144,20 @@ let isCheck board color =
     let king = List.head( board |> List.filter ( fun e-> e.data.type_ = KING && e.data.player = color ))
     [king.p] |> arePositionsInRangeOfPawnsOfColor board (opposite color)
 
+let isCheckmated board color=
+    let king = List.head( board |> List.filter ( fun e-> e.data.type_ = KING && e.data.player = color ))
+    // calculate status of fields around the king
+    // if EACH one is either occupied by friendly or in range of enemy pawn, then checkmate ( literally)
+    let kingDir = [(0,0);(1,0);(0,1);(-1,0);(0,-1);(1,1);(-1,1);(1,-1);(-1,-1)]
+    kingDir
+        |> List.map ( fun e -> { row = king.p.row + fst(e); col = king.p.col + snd(e)})
+        //|> List.filter ( fun e -> (canMoveTo false board king.data e) && ( match (getPawnOnBoard board e) with Some(e) when e.data.type_<>KING ->false | _->true) )
+        |> List.filter ( fun e -> // get positions on board where there is none or enemy
+            match inBounds e, getPawnOnBoard board e with
+                | _, Some p when p.data.player = color && p<>king -> false // cannot move where friendly is at
+                | t,_ -> t)
+        |> arePositionsInRangeOfPawnsOfColor board (opposite color)
+
 
 
 
@@ -150,21 +165,17 @@ let isCheck board color =
 type GameStatus = CONTINUE|DRAW| WIN of Color
 
 // Experimental
-let getGameStatus board =
-    let isCheckmated color board =
-        let king = List.head( board |> List.filter ( fun e-> e.data.type_ = KING && e.data.player = color ))
-        // calculate status of fields around the king
-        // if EACH one is either occupied by friendly or in range of enemy pawn, then checkmate ( literally)
-        let kingDir = [(0,0);(1,0);(0,1);(-1,0);(0,-1);(1,1);(-1,1);(1,-1);(-1,-1)]
-        kingDir
-            |> List.map ( fun e -> { row = king.p.row + fst(e); col = king.p.col + snd(e)})
-            |> List.filter ( fun e -> // get positions on board where there is none or enemy
-                match inBounds e, getPawnOnBoard board e with
-                    false, _ -> false
-                    | _, Some p when p.data.player = color -> false // cannot move where friendly is at
-                    | _ -> true)
-            |> arePositionsInRangeOfPawnsOfColor board (opposite color)
-    if isCheckmated BLACK board || isCheckmated WHITE board then WIN(BLACK) else CONTINUE // TODO this is not OK !
+let getGameStatus board nextColorToMove =
+    let isDraw = // TODO could be better
+        let pawnsBesideKing = board |> List.filter ( fun e-> e.data.type_<>KING && e.data.player=nextColorToMove) // no sufficient material to checkmate
+        let hasMoves = // no moves left for player
+            board
+                |> List.filter ( fun e-> e.data.player <> nextColorToMove)
+                |> List.map ( fun p->  getAvailableMoves false board p)
+                |> List.concat
+                |> List.exists ( fun e -> match e with Move.End -> false | _ -> true)
+        pawnsBesideKing = [] || not hasMoves
+    if isCheckmated board nextColorToMove then WIN( opposite nextColorToMove) else CONTINUE // TODO this is not OK !
 //    let isDraw = // TODO implement draw situation
 
 
